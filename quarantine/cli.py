@@ -346,13 +346,13 @@ def _real_pip() -> str | None:
 
 
 def _real_tool(tool: str) -> str | None:
-    current_shim = Path(sys.argv[0]).resolve().parent if sys.argv else None
+    # Only the actual shim locations are excluded (to stop the shim calling
+    # itself). We must NOT exclude the dir holding the `quarantine` console
+    # script (e.g. a venv's bin), because the real pip/npm usually lives there.
     ignored = {
         str(_shim_dir(_quarantine_home()).resolve()),
         str((Path.cwd() / "interceptor" / "bin").resolve()),
     }
-    if current_shim:
-        ignored.add(str(current_shim))
     path = os.pathsep.join(
         entry
         for entry in os.environ.get("PATH", "").split(os.pathsep)
@@ -404,11 +404,11 @@ def _shell_profile_block(home: Path) -> str:
             _shell_init(home),
             "quarantine() {",
             '  command quarantine "$@"',
-            '  status="$?"',
-            '  if [ "${1:-}" = "enable" ] && [ "$status" -eq 0 ]; then',
+            '  ret="$?"',
+            '  if [ "${1:-}" = "enable" ] && [ "$ret" -eq 0 ]; then',
             '    eval "$(command quarantine shell-init)"',
             "  fi",
-            '  return "$status"',
+            '  return "$ret"',
             "}",
         ]
     )
