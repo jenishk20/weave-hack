@@ -1,0 +1,9 @@
+{
+  "name": "evil-demo-pkg",
+  "version": "1.0.0",
+  "description": "HARMLESS demo package that mimics a credential-stealing supply-chain attack against FAKE honeytokens. Used to prove Quarantine catches runtime exfiltration. Never publish.",
+  "private": true,
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  }
+}

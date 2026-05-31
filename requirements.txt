@@ -1,0 +1,9 @@
+# Core
+weave>=0.51            # tracing + evaluation (Best Use of Weave)
+anthropic>=0.40        # Claude API (reasoning + fix agents)
+requests>=2.31         # intel agent: OSV.dev + npm registry
+
+# Optional / stretch
+fastapi>=0.110         # interceptor HTTP endpoint
+uvicorn>=0.29          # serve the endpoint
+# docker SDK is optional — the sandbox agent can shell out to the `docker` CLI.
