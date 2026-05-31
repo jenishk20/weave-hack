@@ -2,11 +2,12 @@
 # Owner: Person A (YOU).
 # Build once at startup:  docker build -t quarantine-sandbox ./sandbox
 #
-# Node (to run npm) + strace (to watch connect()/open() syscalls during install).
+# Node/Python (to run package install hooks) + strace (to watch connect()/open()).
 FROM node:20-bookworm-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends strace ca-certificates \
+    && apt-get install -y --no-install-recommends \
+        strace ca-certificates python3 python3-pip python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

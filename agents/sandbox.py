@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import time
 import uuid
@@ -40,8 +41,12 @@ def _run(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess:
     return subprocess.run(args, capture_output=True, text=True, timeout=timeout)
 
 
-def _read_postinstall(pkg_dir: str) -> str:
-    p = os.path.join(pkg_dir, "postinstall.js")
+def _docker_available() -> bool:
+    return shutil.which("docker") is not None
+
+
+def _read_file(pkg_dir: str, filename: str) -> str:
+    p = os.path.join(pkg_dir, filename)
     try:
         with open(p) as f:
             return f.read()[:2000]
@@ -85,6 +90,9 @@ def sandbox_agent(package: str, version: str = "latest") -> TelemetryBlob:
     started = time.time()
 
     try:
+        if not _docker_available():
+            raise RuntimeError("docker binary not found on PATH")
+
         # 1) start a fresh disposable room
         net = ["--network=none"] if SEAL_NETWORK else []
         run = _run(["docker", "run", "-d", "--name", container, *net, IMAGE])
@@ -111,8 +119,26 @@ def sandbox_agent(package: str, version: str = "latest") -> TelemetryBlob:
                           "strace -f -e trace=openat,connect "
                           "node /tmp/target/postinstall.js 2>/tmp/strace.log; "
                           "cat /tmp/strace.log"])
+            if os.path.exists(os.path.join(pkg_dir, "postinstall.js")):
+                deton_cmd = (
+                    "strace -f -e trace=openat,connect "
+                    "node /tmp/target/postinstall.js 2>/tmp/strace.log; "
+                    "cat /tmp/strace.log"
+                )
+                scripts = {"postinstall": _read_file(pkg_dir, "postinstall.js")}
+            elif os.path.exists(os.path.join(pkg_dir, "setup.py")):
+                deton_cmd = (
+                    "cd /tmp/target && "
+                    "strace -f -e trace=openat,connect "
+                    "python3 setup.py install 2>/tmp/strace.log; "
+                    "cat /tmp/strace.log"
+                )
+                scripts = {"setup.py": _read_file(pkg_dir, "setup.py")}
+            else:
+                deton_cmd = "true"
+
+            deton = _run(["docker", "exec", container, "sh", "-c", deton_cmd])
             log = deton.stdout
-            scripts = {"postinstall": _read_postinstall(pkg_dir)}
         # (else: no local package dir — nothing to detonate in this v1)
 
         # 5) parse the log into structured telemetry
@@ -134,4 +160,5 @@ def sandbox_agent(package: str, version: str = "latest") -> TelemetryBlob:
 
     finally:
         # 6) ALWAYS destroy the room
-        _run(["docker", "rm", "-f", container])
+        if _docker_available():
+            _run(["docker", "rm", "-f", container])
