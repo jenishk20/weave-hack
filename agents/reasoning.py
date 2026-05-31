@@ -48,6 +48,18 @@ def _telemetry_text(t: TelemetryBlob, intel: IntelResult | None) -> str:
 
 @W.op
 def reasoning_agent(telemetry: TelemetryBlob, intel: IntelResult | None = None) -> Verdict:
+    if telemetry.exit_code != 0:
+        error = telemetry.install_scripts.get("error", "sandbox failed before producing telemetry")
+        return Verdict(
+            package=telemetry.package,
+            version=telemetry.version,
+            decision="block",
+            risk="medium",
+            score=0.70,
+            evidence=[f"Sandbox detonation failed: {error}"],
+            summary="Blocked pending a successful sandbox detonation.",
+        )
+
     if llm.available():
         try:
             content = llm.chat(

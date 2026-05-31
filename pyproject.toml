@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quarantine-guard"
+version = "0.1.0"
+description = "A multi-agent npm install guardrail that detonates dependencies before they touch your workspace."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "weave>=0.51",
+    "wandb>=0.27",
+    "openai>=1.0",
+    "requests>=2.31",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+
+[project.scripts]
+quarantine = "quarantine.cli:main"
+
+[tool.setuptools]
+py-modules = ["contracts", "llm", "orchestrator", "weave_shim"]
+packages = ["agents", "eval", "quarantine"]
+
