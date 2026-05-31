@@ -66,7 +66,7 @@ def _parse_strace(log: str, canary: str) -> tuple[list[FileAccess], list[Network
     # connect(..., sin_port=htons(443), sin_addr=inet_addr("203.0.113.7"), ...)
     for m in re.finditer(r'connect\([^)]*sin_port=htons\((\d+)\)[^)]*inet_addr\("([^"]+)"\)', log):
         port, ip = int(m.group(1)), m.group(2)
-        if ip.startswith("127.") or port == 53:   # drop localhost / DNS noise
+        if ip.startswith("127.") or port in (0, 53):   # drop localhost / DNS / setup noise
             continue
         network_attempts.append(NetworkAttempt(dest_host=None, dest_ip=ip, port=port))
 
@@ -99,7 +99,15 @@ def sandbox_agent(package: str, version: str = "latest") -> TelemetryBlob:
         log = ""
         if os.path.isdir(pkg_dir):
             _run(["docker", "cp", pkg_dir, f"{container}:/tmp/target"])
-            deton = _run(["docker", "exec", container, "sh", "-c",
+            # Inject the honeytoken env vars (with the canary) directly into the
+            # detonation process, so `process.env.*` is populated too — not just
+            # the seeded files. (The seed script's `export` can't reach this
+            # separate exec, hence the -e flags here.)
+            deton = _run(["docker", "exec",
+                          "-e", f"AWS_ACCESS_KEY_ID=AKIA{canary}",
+                          "-e", f"AWS_SECRET_ACCESS_KEY=secret_{canary}",
+                          "-e", f"OPENAI_API_KEY=sk-{canary}",
+                          container, "sh", "-c",
                           "strace -f -e trace=openat,connect "
                           "node /tmp/target/postinstall.js 2>/tmp/strace.log; "
                           "cat /tmp/strace.log"])
