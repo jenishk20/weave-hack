@@ -9,6 +9,15 @@ Owner: Person B (spine).
 """
 from __future__ import annotations
 
+# Load a local .env into the environment (so WANDB_API_KEY etc. work without
+# having to `export` them). Every module imports weave_shim, so this runs first.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:
+    pass
+
 try:
     import weave  # type: ignore
 

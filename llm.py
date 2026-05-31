@@ -15,6 +15,15 @@ from __future__ import annotations
 import os
 import openai
 
+# Load .env here too, so this module works even when imported standalone
+# (not just via weave_shim). Safe no-op if python-dotenv isn't installed.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:
+    pass
+
 # Your W&B team/project (used by Inference for usage tracking).
 WANDB_PROJECT = "jenishk1800-student/quarantine"
 
