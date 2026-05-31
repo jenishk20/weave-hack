@@ -13,7 +13,9 @@ WORKDIR /app
 
 # Honeytoken seeder is baked in; the Sandbox Agent runs it with a unique canary.
 COPY seed_honeytokens.sh /usr/local/bin/seed_honeytokens.sh
-RUN chmod +x /usr/local/bin/seed_honeytokens.sh
+# Strip Windows CRLF line endings so bash can parse the script on Linux
+RUN sed -i 's/\r$//' /usr/local/bin/seed_honeytokens.sh \
+    && chmod +x /usr/local/bin/seed_honeytokens.sh
 
 # Container is driven via `docker exec` from the Sandbox Agent; keep it alive.
 CMD ["sleep", "infinity"]
