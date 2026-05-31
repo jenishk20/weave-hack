@@ -18,7 +18,7 @@ from contracts import IntelResult, TelemetryBlob, Verdict
 
 load_dotenv()
 
-_MODEL = os.getenv("WANDB_MODEL", "meta-llama/Llama-3.1-70B-Instruct")
+_MODEL = os.getenv("WANDB_MODEL", "openai/gpt-oss-120b")
 _client: OpenAI | None = None
 
 

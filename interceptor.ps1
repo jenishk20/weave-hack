@@ -8,7 +8,6 @@
 
 # Resolve root directory robustly — works whether dot-sourced by relative or absolute path
 $QuarantineRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent (Resolve-Path ".\interceptor.ps1") }
-$QuarantinePython = "$QuarantineRoot\.venv\Scripts\python.exe"
 
 function npm {
     $subcmd = $args[0]
@@ -27,7 +26,7 @@ function npm {
 
         if ($package) {
             # quarantine.py scans and either blocks or runs real npm install
-            & $QuarantinePython "$QuarantineRoot\quarantine.py" $package
+            python "$QuarantineRoot\quarantine.py" $package
             return
         }
     }
@@ -36,4 +35,4 @@ function npm {
     & npm.cmd @args
 }
 
-Write-Host "[quarantine] Interceptor active — all npm installs will be scanned."
+Write-Host "[quarantine] Interceptor active - all npm installs will be scanned."
