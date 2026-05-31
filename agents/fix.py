@@ -1,28 +1,61 @@
 """
-fix.py — FIX AGENT (LLM agent, Claude).
+fix.py — FIX AGENT (LLM agent, W&B Inference / DeepSeek).
 
-Job: on a "block" verdict, propose a safe alternative + a remediation message
-the AI coder / dev can act on. (We do NOT silently rewrite code today — that's
-a future-work slide. We return a structured suggestion.)
+Job: on a "block" verdict, ask the model for a safe, well-maintained alternative
+npm package and a concrete remediation the AI coder / dev can act on. Works for
+ANY package now (not a hardcoded list).
 
 Owner: Person C (intelligence).
 
-STATUS: STUB. Replace with a Claude call that picks a real safe alternative.
+Falls back to a tiny lookup if the LLM is unavailable.
 """
 from __future__ import annotations
 
+import json
+
 import weave_shim as W
+import llm
 from contracts import Verdict, Remediation
 
-# tiny demo lookup; real version asks Claude for the best-known alternative
-_KNOWN_ALTERNATIVES = {
-    "evil-demo-pkg": "lodash",
-}
+_SYSTEM = (
+    "You are a remediation agent in an npm supply-chain defense system. "
+    "A package was blocked as malicious. Suggest a single safe, popular, "
+    "well-maintained npm package that serves the same purpose, and how to swap it.\n"
+    'Respond with ONLY a JSON object: {"safe_alternative":"<npm package name>",'
+    '"reason":"<why it is safe>","import_change":"<concrete change>",'
+    '"message_to_agent":"<one short instruction to the developer>"}'
+)
+
+_FALLBACK = {"evil-demo-pkg": "lodash"}
 
 
 @W.op
 def fix_agent(verdict: Verdict) -> Remediation:
-    alt = _KNOWN_ALTERNATIVES.get(verdict.package, None)
+    if llm.available():
+        try:
+            content = llm.chat(
+                [
+                    {"role": "system", "content": _SYSTEM},
+                    {"role": "user", "content":
+                        f"Blocked package: {verdict.package}\nReason: {verdict.summary}\n"
+                        f"Evidence: {'; '.join(verdict.evidence)}"},
+                ],
+                response_format={"type": "json_object"},
+                temperature=0,
+            )
+            data = json.loads(content)
+            return Remediation(
+                blocked_package=verdict.package,
+                safe_alternative=data.get("safe_alternative"),
+                reason=data.get("reason", verdict.summary),
+                import_change=data.get("import_change", ""),
+                message_to_agent=data.get("message_to_agent", ""),
+            )
+        except Exception:
+            pass
+
+    # ---- fallback ----
+    alt = _FALLBACK.get(verdict.package)
     return Remediation(
         blocked_package=verdict.package,
         safe_alternative=alt,
@@ -30,8 +63,6 @@ def fix_agent(verdict: Verdict) -> Remediation:
         import_change=f"replace '{verdict.package}' with '{alt}'" if alt else "",
         message_to_agent=(
             f"'{verdict.package}' was blocked: {verdict.summary} "
-            + (f"Use '{alt}' instead and update your imports." if alt else
-               "No safe drop-in found; remove this dependency.")
+            + (f"Use '{alt}' instead." if alt else "Remove this dependency.")
         ),
     )
-    # ---- TODO: Claude call to find the best safe alternative for `verdict.package`.

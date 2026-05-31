@@ -1,6 +1,7 @@
 # Core
 weave>=0.51            # tracing + evaluation (Best Use of Weave)
-openai>=1.0            # W&B Inference uses the OpenAI-compatible client
+wandb>=0.27            # W&B CLI / login (provides `wandb login`)
+openai>=1.0            # client for W&B Inference (reasoning + fix agents, a sponsor tool)
 requests>=2.31         # intel agent: OSV.dev + npm registry
 
 # Optional / stretch
