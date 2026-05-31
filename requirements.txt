@@ -1,6 +1,6 @@
 # Core
 weave>=0.51            # tracing + evaluation (Best Use of Weave)
-anthropic>=0.40        # Claude API (reasoning + fix agents)
+openai>=1.0            # W&B Inference uses the OpenAI-compatible client
 requests>=2.31         # intel agent: OSV.dev + npm registry
 
 # Optional / stretch

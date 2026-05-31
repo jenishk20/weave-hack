@@ -51,6 +51,11 @@ def orchestrate(package: str, version: str = "latest") -> dict:
 
 
 @W.op
+def quarantine_install_trace(package: str, version: str = "latest") -> dict:
+    return orchestrate(package, version)
+
+
+@W.op
 def _finalize(verdict: Verdict) -> dict:
     out = {"verdict": verdict, "remediation": None}
     if verdict.decision == "block":
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     for pkg in ["evil-demo-pkg", "lodash"]:
         print("\n" + "=" * 60)
         print(f"npm install {pkg}")
-        result = orchestrate(pkg)
+        result = quarantine_install_trace(pkg)
         v: Verdict = result["verdict"]
         print(f"  decision = {v.decision.upper()}  risk = {v.risk}  score = {v.score}")
         print(f"  summary  = {v.summary}")
